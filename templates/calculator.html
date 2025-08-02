@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeoCalc - Quantum Calculator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Orbitron', monospace;
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .background-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .calculator-container {
+            background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
+            border: 2px solid #00ffff;
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 
+                0 0 50px rgba(0, 255, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            max-width: 450px;
+            width: 100%;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .calculator-container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00ffff, #ff00ff, #ffff00, #00ffff);
+            border-radius: 20px;
+            z-index: -1;
+            animation: borderGlow 3s linear infinite;
+        }
+
+        @keyframes borderGlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            animation: textGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes textGlow {
+            from { filter: drop-shadow(0 0 5px #00ffff); }
+            to { filter: drop-shadow(0 0 20px #ff00ff); }
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+
+        .calculator-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .input-section {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid #334155;
+            border-radius: 15px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .input-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+            animation: scanLine 3s linear infinite;
+        }
+
+        @keyframes scanLine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .input-label {
+            display: block;
+            color: #00ffff;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .number-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #334155;
+            border-radius: 10px;
+            color: #ffffff;
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .number-input:focus {
+            border-color: #00ffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            background: rgba(0, 255, 255, 0.1);
+        }
+
+        .operation-section {
+            display: flex;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+
+        .operation-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .operation-btn {
+            padding: 1rem;
+            background: linear-gradient(145deg, #1e293b, #334155);
+            border: 2px solid #475569;
+            border-radius: 12px;
+            color: #ffffff;
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .operation-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.3) 0%, transparent 70%);
+            transition: all 0.3s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        .operation-btn:hover::before {
+            width: 100px;
+            height: 100px;
+        }
+
+        .operation-btn:hover {
+            border-color: #00ffff;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .operation-btn.active {
+            background: linear-gradient(145deg, #00ffff, #0891b2);
+            color: #000;
+            border-color: #00ffff;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);
+        }
+
+        .calculate-btn {
+            padding: 1.5rem 2rem;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            border: none;
+            border-radius: 15px;
+            color: #000;
+            font-family: 'Orbitron', monospace;
+            font-size: 1.1rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .calculate-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .calculate-btn:hover::before {
+            left: 100%;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 0, 255, 0.4);
+        }
+
+        .result-container {
+            margin-top: 2rem;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            animation: resultAppear 0.5s ease;
+        }
+
+        @keyframes resultAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.8) rotateX(-90deg);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) rotateX(0deg);
+            }
+        }
+
+        .result-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                rgba(0, 255, 255, 0.1) 0%, 
+                transparent 50%, 
+                rgba(255, 0, 255, 0.1) 100%);
+            animation: resultShimmer 2s linear infinite;
+        }
+
+        @keyframes resultShimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .result-label {
+            color: #00ffff;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .result-value {
+            color: #ffffff;
+            font-size: 3rem;
+            font-weight: 900;
+            font-family: 'Orbitron', monospace;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
+        }
+
+        .calculation-display {
+            color: #64748b;
+            font-size: 1rem;
+            font-family: 'Orbitron', monospace;
+            position: relative;
+            z-index: 1;
+        }
+
+        .quantum-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #00ffff;
+            border-radius: 50%;
+            animation: quantumFloat 4s infinite linear;
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        @keyframes quantumFloat {
+            0% {
+                transform: translateY(100vh) translateX(0) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-10px) translateX(100px) scale(0);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .calculator-container {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+
+            .logo {
+                font-size: 2rem;
+            }
+
+            .operation-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .result-value {
+                font-size: 2rem;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-grid"></div>
+    
+    <div class="quantum-particles">
+        <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+        <div class="particle" style="left: 20%; animation-delay: 0.5s;"></div>
+        <div class="particle" style="left: 30%; animation-delay: 1s;"></div>
+        <div class="particle" style="left: 40%; animation-delay: 1.5s;"></div>
+        <div class="particle" style="left: 50%; animation-delay: 2s;"></div>
+        <div class="particle" style="left: 60%; animation-delay: 2.5s;"></div>
+        <div class="particle" style="left: 70%; animation-delay: 3s;"></div>
+        <div class="particle" style="left: 80%; animation-delay: 3.5s;"></div>
+        <div class="particle" style="left: 90%; animation-delay: 4s;"></div>
+    </div>
+
+    <div class="calculator-container">
+        <div class="header">
+            <div class="logo">NeoCalc</div>
+            <div class="subtitle">Quantum Mathematical Processor</div>
+        </div>
+
+        <form method="POST" class="calculator-form">
+            <div class="input-section">
+                <label class="input-label">
+                    <i class="fas fa-arrow-right"></i> Input Alpha
+                </label>
+                <input type="number" name="num1" class="number-input" placeholder="0.00" step="any" required>
+            </div>
+
+            <div class="operation-section">
+                <div class="operation-grid">
+                    <button type="button" class="operation-btn" data-op="+">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button type="button" class="operation-btn" data-op="-">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button type="button" class="operation-btn" data-op="*">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <button type="button" class="operation-btn" data-op="/">
+                        <i class="fas fa-divide"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="input-section">
+                <label class="input-label">
+                    <i class="fas fa-arrow-right"></i> Input Beta
+                </label>
+                <input type="number" name="num2" class="number-input" placeholder="0.00" step="any" required>
+            </div>
+
+            <input type="hidden" name="operation" id="selected-operation" value="+">
+            
+            <button type="submit" class="calculate-btn">
+                <i class="fas fa-rocket"></i>
+                Execute Calculation
+            </button>
+        </form>
+
+        {% if result is not none %}
+        <div class="result-container">
+            <div class="result-label">Quantum Result</div>
+            <div class="result-value">{{ result }}</div>
+            <div class="calculation-display">
+                {{ request.form.get('num1', '') }} {{ request.form.get('operation', '') }} {{ request.form.get('num2', '') }} = {{ result }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const operationBtns = document.querySelectorAll('.operation-btn');
+            const hiddenOperation = document.getElementById('selected-operation');
+            const form = document.querySelector('.calculator-form');
+            const inputs = document.querySelectorAll('.number-input');
+
+            // Operation selection
+            operationBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all buttons
+                    operationBtns.forEach(b => b.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Set hidden input value
+                    hiddenOperation.value = this.dataset.op;
+                    
+                    // Add pulse effect
+                    this.style.transform = 'scale(1.1)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 200);
+                });
+            });
+
+            // Set default active operation
+            operationBtns[0].classList.add('active');
+
+            // Enhanced input effects
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.style.transform = 'scale(1.02)';
+                    this.parentElement.style.zIndex = '10';
+                });
+
+                input.addEventListener('blur', function() {
+                    this.parentElement.style.transform = '';
+                    this.parentElement.style.zIndex = '';
+                });
+
+                input.addEventListener('input', function() {
+                    if (this.value) {
+                        this.style.color = '#00ffff';
+                        this.style.textShadow = '0 0 10px #00ffff';
+                    } else {
+                        this.style.color = '#ffffff';
+                        this.style.textShadow = '';
+                    }
+                });
+            });
+
+            // Form submission effect
+            form.addEventListener('submit', function(e) {
+                const btn = this.querySelector('.calculate-btn');
+                btn.style.background = 'linear-gradient(45deg, #ffff00, #ff00ff)';
+                btn.innerHTML = '<i class="fas fa-cog fa-spin"></i> Processing...';
+                
+                setTimeout(() => {
+                    btn.style.background = '';
+                    btn.innerHTML = '<i class="fas fa-rocket"></i> Execute Calculation';
+                }, 1000);
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                switch(e.key) {
+                    case '+':
+                        e.preventDefault();
+                        operationBtns[0].click();
+                        break;
+                    case '-':
+                        e.preventDefault();
+                        operationBtns[1].click();
+                        break;
+                    case '*':
+                        e.preventDefault();
+                        operationBtns[2].click();
+                        break;
+                    case '/':
+                        e.preventDefault();
+                        operationBtns[3].click();
+                        break;
+                    case 'Enter':
+                        if (e.ctrlKey) {
+                            e.preventDefault();
+                            form.querySelector('.calculate-btn').click();
+                        }
+                        break;
+                }
+            });
+
+            // Auto-focus first input
+            inputs[0].focus();
+
+            // Create more dynamic particles
+            function createParticle() {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 4 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                
+                const colors = ['#00ffff', '#ff00ff', '#ffff00'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.background = color;
+                particle.style.boxShadow = `0 0 10px ${color}`;
+                
+                document.querySelector('.quantum-particles').appendChild(particle);
+                
+                setTimeout(() => {
+                    particle.remove();
+                }, 4000);
+            }
+
+            // Generate particles periodically
+            setInterval(createParticle, 800);
+        });
+    </script>
+</body>
+</html>
